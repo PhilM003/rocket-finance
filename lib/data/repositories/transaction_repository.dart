@@ -1,65 +1,10 @@
-import 'package:rocket_finance/data/database/app_database.dart';
+import 'package:rocket_finance/data/datasources/local_datasource.dart';
 import 'package:rocket_finance/data/models/transaction_model.dart';
-import 'package:uuid/uuid.dart';
-import 'package:drift/drift.dart';
 
 class TransactionRepository {
-  final AppDatabase _database;
+  final LocalDataSource _localDataSource;
 
-  TransactionRepository(this._database);
-
-  Future<List<TransactionModel>> getAllTransactions() async {
-    final txns = await _database.getAllTransactions();
-    return txns.map((t) => TransactionModel(
-      id: t.id,
-      title: t.title,
-      amount: t.amount,
-      type: t.type,
-      category: t.category,
-      accountName: t.accountName,
-      createdAt: t.createdAt,
-    )).toList();
-  }
-
-  Future<List<TransactionModel>> getTransactionsByDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    final txns = await _database.getTransactionsByDateRange(startDate, endDate);
-    return txns.map((t) => TransactionModel(
-      id: t.id,
-      title: t.title,
-      amount: t.amount,
-      type: t.type,
-      category: t.category,
-      accountName: t.accountName,
-      createdAt: t.createdAt,
-    )).toList();
-  }
-
-  Future<List<TransactionModel>> getCurrentMonthTransactions() async {
-    final txns = await _database.getCurrentMonthTransactions();
-    return txns.map((t) => TransactionModel(
-      id: t.id,
-      title: t.title,
-      amount: t.amount,
-      type: t.type,
-      category: t.category,
-      accountName: t.accountName,
-      createdAt: t.createdAt,
-    )).toList();
-  }
-
-  Future<double> getTotalIncomeByRange(DateTime start, DateTime end) =>
-      _database.getTotalIncomeByRange(start, end);
-
-  Future<double> getTotalExpensesByRange(DateTime start, DateTime end) =>
-      _database.getTotalExpensesByRange(start, end);
-
-  Future<Map<String, double>> getExpensesByCategory(
-    DateTime start,
-    DateTime end,
-  ) => _database.getExpensesByCategory(start, end);
+  TransactionRepository(this._localDataSource);
 
   Future<void> createTransaction({
     required String title,
@@ -69,18 +14,47 @@ class TransactionRepository {
     required String accountName,
     required DateTime createdAt,
   }) async {
-    const uuid = Uuid();
-    await _database.insertTransaction(TransactionsCompanion(
-      id: Value(uuid.v4()),
-      title: Value(title),
-      amount: Value(amount),
-      type: Value(type),
-      category: Value(category),
-      accountName: Value(accountName),
-      createdAt: Value(createdAt),
-    ));
+    await _localDataSource.insertTransaction(
+      title: title,
+      amount: amount,
+      type: type,
+      category: category,
+      accountName: accountName,
+      createdAt: createdAt,
+    );
   }
 
-  Future<void> deleteTransaction(String id) =>
-      _database.deleteTransaction(id);
+  Future<List<TransactionModel>> getAllTransactions() async {
+    return await _localDataSource.getAllTransactions();
+  }
+
+  Future<List<TransactionModel>> getCurrentMonthTransactions() async {
+    return await _localDataSource.getCurrentMonthTransactions();
+  }
+
+  Future<List<TransactionModel>> getTransactionsByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    return await _localDataSource.getTransactionsByDateRange(startDate, endDate);
+  }
+
+  Future<double> getTotalIncomeByRange(DateTime startDate, DateTime endDate) async {
+    return await _localDataSource.getTotalIncomeByRange(startDate, endDate);
+  }
+
+  Future<double> getTotalExpensesByRange(DateTime startDate, DateTime endDate) async {
+    return await _localDataSource.getTotalExpensesByRange(startDate, endDate);
+  }
+
+  Future<Map<String, double>> getExpensesByCategory(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    return await _localDataSource.getExpensesByCategory(startDate, endDate);
+  }
+
+  Future<void> deleteTransaction(String id) async {
+    await _localDataSource.deleteTransaction(id);
+  }
 }
